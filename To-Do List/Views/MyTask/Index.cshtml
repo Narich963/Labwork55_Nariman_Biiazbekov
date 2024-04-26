@@ -16,13 +16,16 @@
                 Id
             </th>
             <th>
-                Название
+                <a asp-action="Index" asp-route-order="@ViewBag.NameSort">Название</a>
             </th>
             <th>
-                Приоритет
+                <a asp-action="Index" asp-route-order="@ViewBag.PrioritySort">Приоритет</a>
             </th>
             <th>
-                Статус
+                <a asp-action="Index" asp-route-order="@ViewBag.StatusSort">Статус</a>
+            </th>
+            <th>
+                <a asp-action="Index" asp-route-order="@ViewBag.CreatedSort">Дата создания</a>
             </th>
             <th>
                 Действия
@@ -43,6 +46,9 @@
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.Status)
+            </td>
+            <td>
+                   @Html.DisplayFor(modelItem => item.Created)
             </td>
                 @switch (item.Status)
                 {

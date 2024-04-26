@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using To_Do_List.Models;
+using static To_Do_List.Services.TaskSort;
+using To_Do_List.Services;
 
 namespace To_Do_List.Controllers
 {
@@ -19,9 +21,18 @@ namespace To_Do_List.Controllers
         }
 
         // GET: MyTask
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(TaskSort order = PriorytyAsc)
         {
-            return View(await _context.MyTasks.ToListAsync());
+            ViewBag.NameSort = order == NameAsc ? NameDesc : NameAsc;
+            ViewBag.CreatedSort = order == CreatedAsc ? CreatedDesc : CreatedAsc;
+            ViewBag.PrioritySort = order == PriorytyAsc ? PriorytyDesc : PriorytyAsc;
+            ViewBag.StatusSort = order == StatusAsc ? StatusDesc : StatusAsc;
+
+            var tasks = await _context.MyTasks.ToListAsync();
+
+            tasks = GetSortOrder(tasks, order);
+
+            return View(tasks);
         }
 
         // GET: MyTask/Details/5
@@ -138,5 +149,54 @@ namespace To_Do_List.Controllers
             }
             return NotFound();
         }
+        [NonAction]
+        public List<MyTask> GetSortOrder(List<MyTask> tasks, TaskSort order) =>
+            order switch
+            {
+                PriorytyAsc => SortPrioriyAsc(tasks),
+                PriorytyDesc => SortPrioriyDesc(tasks),
+                NameAsc => tasks.OrderBy(t => t.Name).ToList(),
+                NameDesc => tasks.OrderByDescending(t => t.Name).ToList(),
+                CreatedAsc => tasks.OrderBy(t => t.Created).ToList(),
+                CreatedDesc => tasks.OrderByDescending(t => t.Created).ToList(),
+                StatusAsc => SortStatusAsc(tasks),
+                StatusDesc => SortStatusDesc(tasks)
+            };
+        [NonAction]
+        public List<MyTask> SortPrioriyAsc(List<MyTask> tasks) =>
+            tasks.OrderBy(t => t.Priority switch
+            {
+                "Высокий" => 0,
+                "Средний" => 1,
+                "Низкий" => 2,
+                _ => 3
+            }).ToList();
+        [NonAction]
+        public List<MyTask> SortPrioriyDesc(List<MyTask> tasks) =>
+            tasks.OrderBy(t => t.Priority switch
+            {
+                "Высокий" => 3,
+                "Средний" => 2,
+                "Низкий" => 1,
+                _ => 0
+            }).ToList();
+        [NonAction]
+        public List<MyTask> SortStatusAsc(List<MyTask> tasks) =>
+            tasks.OrderBy(t => t.Status switch
+            {
+                "Новая" => 0,
+                "Открыта" => 1,
+                "Закрыта" => 2,
+                _ => 3
+            }).ToList();
+        [NonAction]
+        public List<MyTask> SortStatusDesc(List<MyTask> tasks) =>
+            tasks.OrderBy(t => t.Status switch
+            {
+                "Новая" => 3,
+                "Открыта" => 2,
+                "Закрыта" => 1,
+                _ => 0
+            }).ToList();
     }
 }
