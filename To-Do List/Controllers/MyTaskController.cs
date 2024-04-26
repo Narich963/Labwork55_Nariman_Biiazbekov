@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using To_Do_List.Models;
 using static To_Do_List.Services.TaskSort;
 using To_Do_List.Services;
+using To_Do_List.ViewModels;
 
 namespace To_Do_List.Controllers
 {
@@ -23,7 +24,7 @@ namespace To_Do_List.Controllers
         // GET: MyTask
         public async Task<IActionResult> Index(string? fullName, DateTime? CreatedFrom, DateTime? CreatedTo, 
             string? wordContains, string? priority, string? status, 
-            TaskSort order = PriorytyAsc)
+            TaskSort order = PriorytyAsc, int page = 1)
         {
             ViewBag.NameSort = order == NameAsc ? NameDesc : NameAsc;
             ViewBag.CreatedSort = order == CreatedAsc ? CreatedDesc : CreatedAsc;
@@ -59,7 +60,18 @@ namespace To_Do_List.Controllers
 
             tasks = GetSortOrder(tasks, order);
 
-            return View(tasks);
+            int pagesize = 10;
+            var count = tasks.Count();
+            var items = tasks.Skip((page - 1) * pagesize).Take(pagesize).ToList();
+
+            PageViewModel pageViewModel = new PageViewModel(count, page, pagesize);
+            IndexViewModel viewModel = new()
+            {
+                PageViewModel = pageViewModel,
+                Tasks = items
+            };
+
+            return View(viewModel);
         }
 
         // GET: MyTask/Details/5

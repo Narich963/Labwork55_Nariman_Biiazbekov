@@ -1,4 +1,5 @@
-﻿@model List<To_Do_List.Models.MyTask>
+﻿@using To_Do_List.ViewModels
+@model IndexViewModel
 
 @{
     ViewData["Title"] = "Index";
@@ -75,11 +76,11 @@
         </tr>
     </thead>
     <tbody>
-        @if (Model.Count == 0)
+        @if (Model.Tasks.Count == 0)
         {
             <p>Задач нету</p>
         }
-        @foreach (var item in Model) {
+        @foreach (var item in Model.Tasks) {
         <tr>
             <td>
                 @Html.DisplayFor(modelItem => item.Id)
@@ -122,3 +123,15 @@
 }
     </tbody>
 </table>
+<div class="row">
+    @if (Model.PageViewModel.HasPreviousPage)
+    {
+        <a class="col-2" asp-action="Index" asp-route-page="@(Model.PageViewModel.PageNumger - 1)" class="btn btn-primary">Назад</a>
+    }
+    <span class="text-primary col-2">@Model.PageViewModel.PageNumger</span>
+    @if (Model.PageViewModel.HasNextPage)
+    {
+        <a class="col-2" asp-action="Index" asp-route-page="@(Model.PageViewModel.PageNumger + 1)" class="btn btn-primary">Вперед</a>
+
+    }
+</div>
