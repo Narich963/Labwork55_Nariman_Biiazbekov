@@ -1,0 +1,72 @@
+﻿@model List<To_Do_List.Models.MyTask>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Id
+            </th>
+            <th>
+                Название
+            </th>
+            <th>
+                Приоритет
+            </th>
+            <th>
+                Статус
+            </th>
+            <th>
+                Действия
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Id)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Priority)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Status)
+            </td>
+                @switch (item.Status)
+                {
+                    case "Новая":
+                        <td>
+                            <a asp-action="Open" asp-route-id="@item.Id">Открыть</a> |
+                            <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
+                            <a asp-action="Delete" asp-route-id="@item.Id">Удалить</a>
+                        </td>
+                        break;
+                    case "Закрыта":
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
+                            <a asp-action="Delete" asp-route-id="@item.Id">Удалить</a>
+                        </td>
+                        break;
+                    case "Открыта":
+                        <td>
+                            <a asp-action="Close" asp-route-id="@item.Id">Закрыть</a> |
+                            <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
+                        </td>
+                        break;
+                }
+        </tr>
+}
+    </tbody>
+</table>
