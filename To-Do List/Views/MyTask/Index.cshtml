@@ -9,7 +9,49 @@
 <p>
     <a asp-action="Create">Create New</a>
 </p>
+
 <table class="table">
+    <thead>
+        <tr>
+            <form asp-action="Index" method="get">
+                <th>
+                    <label for="name">Полное название</label>
+                    <input class="form-control" name="fullName" id="name" type="text" />
+                </th>
+                <th>
+                    <label for="datefrom">Дата от</label>
+                    <input class="form-control" name="CreatedFrom" id="datefrom" type="datetime-local" />
+                </th>
+                <th>
+                    <label for="dateto">Дата к</label>
+                    <input class="form-control" name="CreatedTo" id="dateto" type="datetime-local" />
+                </th>
+                <th>
+                    <label for="words">Поиск по содержимому</label>
+                    <input class="form-control" name="wordContains" id="words" type="text" />
+                </th>
+                <th>
+                    <label for="priority">Приоритет</label>
+                    <select class="form-control" name="priority" id="priority">
+                        <option value=""> </option>
+                        <option value="Высокий">Высокий</option>
+                        <option value="Средний">Средний</option>
+                        <option value="Низкий">Низкий</option>
+                    </select>
+                </th>
+                <th>
+                <label for="status">Статус</label>
+                    <select class="form-control" name="status" id="status">
+                        <option value=""> </option>
+                        <option value="Новая">Новая</option>
+                        <option value="Открыта">Открыта</option>
+                        <option value="Закрыта">Закрыта</option>
+                    </select>
+                </th>
+                <button class="btn btn-primary">Фильтровать</button>
+            </form>
+        </tr>
+    </thead>
     <thead>
         <tr>
             <th>
@@ -33,7 +75,11 @@
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
+        @if (Model.Count == 0)
+        {
+            <p>Задач нету</p>
+        }
+        @foreach (var item in Model) {
         <tr>
             <td>
                 @Html.DisplayFor(modelItem => item.Id)

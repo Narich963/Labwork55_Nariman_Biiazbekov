@@ -21,7 +21,9 @@ namespace To_Do_List.Controllers
         }
 
         // GET: MyTask
-        public async Task<IActionResult> Index(TaskSort order = PriorytyAsc)
+        public async Task<IActionResult> Index(string? fullName, DateTime? CreatedFrom, DateTime? CreatedTo, 
+            string? wordContains, string? priority, string? status, 
+            TaskSort order = PriorytyAsc)
         {
             ViewBag.NameSort = order == NameAsc ? NameDesc : NameAsc;
             ViewBag.CreatedSort = order == CreatedAsc ? CreatedDesc : CreatedAsc;
@@ -29,6 +31,31 @@ namespace To_Do_List.Controllers
             ViewBag.StatusSort = order == StatusAsc ? StatusDesc : StatusAsc;
 
             var tasks = await _context.MyTasks.ToListAsync();
+
+            if (fullName != null)
+            {
+                tasks = tasks.Where(t => t.Name ==  fullName).ToList();
+            }
+            if (CreatedFrom.HasValue)
+            {
+                tasks = tasks.Where(t => t.Created > CreatedFrom).ToList();
+            }
+            if (CreatedTo.HasValue)
+            {
+                tasks = tasks.Where(t => t.Created < CreatedTo).ToList();
+            }
+            if (wordContains != null)
+            {
+                tasks = tasks.Where(t => t.Description.Contains(wordContains)).ToList();
+            }
+            if (priority != null)
+            {
+                tasks = tasks.Where(t => t.Priority == priority).ToList();
+            }
+            if (status != null)
+            {
+                tasks = tasks.Where(t => t.Status == status).ToList();
+            }
 
             tasks = GetSortOrder(tasks, order);
 
