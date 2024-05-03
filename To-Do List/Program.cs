@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using To_Do_List.Models;
+using To_Do_List.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,9 +9,34 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 string connection = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<TasksContext>(options => options.UseNpgsql(connection));
+builder.Services
+    .AddDbContext<TasksContext>(options => options.UseNpgsql(connection))
+    .AddIdentity<User, IdentityRole<int>>(opts =>
+    {
+        opts.Password.RequiredLength = 5;
+        opts.Password.RequireDigit = false;
+        opts.Password.RequireLowercase = false;
+        opts.Password.RequireUppercase = false;
+        opts.Password.RequireNonAlphanumeric = false;
+    })
+    .AddEntityFrameworkStores<TasksContext>();
 
 var app = builder.Build();
+
+using var scope = app.Services.CreateScope();
+var services = scope.ServiceProvider;
+try
+{
+    var userManager = services.GetRequiredService<UserManager<User>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<int>>>();
+
+    await AdminInitializer.SeedAdminUser(roleManager, userManager);
+}
+catch (Exception ex)
+{
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "An error has occured while seeding the database");
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -23,7 +50,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
