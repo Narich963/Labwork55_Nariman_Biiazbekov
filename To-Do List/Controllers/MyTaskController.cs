@@ -9,16 +9,18 @@ using To_Do_List.Models;
 using static To_Do_List.Services.TaskSort;
 using To_Do_List.Services;
 using To_Do_List.ViewModels;
+using Microsoft.AspNetCore.Identity;
 
 namespace To_Do_List.Controllers
 {
     public class MyTaskController : Controller
     {
         private readonly TasksContext _context;
-
-        public MyTaskController(TasksContext context)
+        private readonly UserManager<User> _userManager;
+        public MyTaskController(TasksContext context, UserManager<User> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: MyTask
@@ -31,7 +33,7 @@ namespace To_Do_List.Controllers
             ViewBag.PrioritySort = order == PriorytyAsc ? PriorytyDesc : PriorytyAsc;
             ViewBag.StatusSort = order == StatusAsc ? StatusDesc : StatusAsc;
 
-            var tasks = await _context.MyTasks.ToListAsync();
+            var tasks = await _context.MyTasks.Include(t => t.Creator).Include(t => t.Executor).ToListAsync();
 
             if (fullName != null)
             {
@@ -82,7 +84,7 @@ namespace To_Do_List.Controllers
                 return NotFound();
             }
 
-            var myTask = await _context.MyTasks
+            var myTask = await _context.MyTasks.Include(t => t.Creator)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (myTask == null)
             {
@@ -93,8 +95,16 @@ namespace To_Do_List.Controllers
         }
 
         // GET: MyTask/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create(string? email)
         {
+            if (email != null)
+            {
+                User user = await _userManager.FindByEmailAsync(email);
+                if (user != null)
+                {
+                    ViewBag.UserId = user.Id;
+                }
+            }
             return View();
         }
 
@@ -103,7 +113,7 @@ namespace To_Do_List.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Executor,Priority,Status,Description,Created,ClosedDate,OpenedDate")] MyTask myTask)
+        public async Task<IActionResult> Create(MyTask myTask, string? email)
         {
             if (ModelState.IsValid)
             {
@@ -111,9 +121,54 @@ namespace To_Do_List.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+            if (email != null)
+            {
+                User user = await _userManager.FindByEmailAsync(email);
+                if (user != null)
+                {
+                    ViewBag.UserId = user.Id;
+                }
+            }
             return View(myTask);
         }
-
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+            var task = await _context.MyTasks.FirstOrDefaultAsync(t => t.Id == id);
+            if (task != null)
+            {
+                return View(task);
+            }
+            return NotFound();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Edit(MyTask task)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _context.Update(task);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!MyTaskExists(task.Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            return View(task);
+        }
         // GET: MyTask/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
@@ -155,6 +210,22 @@ namespace To_Do_List.Controllers
         private bool MyTaskExists(int id)
         {
             return _context.MyTasks.Any(e => e.Id == id);
+        }
+        public async Task<IActionResult> TakeTask(int? id, string? name)
+        {
+            User user = await _userManager.FindByNameAsync(name);
+            if (user != null)
+            {
+                MyTask task = await _context.MyTasks.FirstOrDefaultAsync(e => e.Id == id);
+                if (task != null)
+                {
+                    task.ExecutorId = user.Id;
+                    task.Executor = user;
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction("Index");
+                }
+            }
+            return NotFound();
         }
         [ActionName("Open")]
         public async Task<IActionResult> Open(int? id)

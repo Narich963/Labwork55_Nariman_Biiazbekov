@@ -7,9 +7,12 @@
 
 <h1>Index</h1>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
+@if (User.Identity.IsAuthenticated)
+{
+    <p>
+        <a asp-action="Create" asp-route-email="@User.Identity.Name">Create New</a>
+    </p>
+}
 
 <table class="table">
     <thead>
@@ -62,6 +65,9 @@
                 <a asp-action="Index" asp-route-order="@ViewBag.NameSort">Название</a>
             </th>
             <th>
+                <a >Создатель</a>
+            </th>
+            <th>
                 <a asp-action="Index" asp-route-order="@ViewBag.PrioritySort">Приоритет</a>
             </th>
             <th>
@@ -89,6 +95,9 @@
                 @Html.DisplayFor(modelItem => item.Name)
             </td>
             <td>
+                @Html.DisplayFor(modelItem => item.Creator.UserName)
+            </td>
+            <td>
                 @Html.DisplayFor(modelItem => item.Priority)
             </td>
             <td>
@@ -97,27 +106,92 @@
             <td>
                    @Html.DisplayFor(modelItem => item.Created)
             </td>
-                @switch (item.Status)
+                @if (User.Identity.IsAuthenticated)
                 {
-                    case "Новая":
-                        <td>
-                            <a asp-action="Open" asp-route-id="@item.Id">Открыть</a> |
-                            <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
-                            <a asp-action="Delete" asp-route-id="@item.Id">Удалить</a>
-                        </td>
-                        break;
-                    case "Закрыта":
-                        <td>
-                            <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
-                            <a asp-action="Delete" asp-route-id="@item.Id">Удалить</a>
-                        </td>
-                        break;
-                    case "Открыта":
-                        <td>
-                            <a asp-action="Close" asp-route-id="@item.Id">Закрыть</a> |
-                            <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
-                        </td>
-                        break;
+                    @if (item.ExecutorId == null)
+                    {
+                        <td><a asp-action="TakeTask" asp-route-id="@item.Id" asp-route-name="@User.Identity.Name">Взять задачу</a></td>
+                    }
+                    else if (User.Identity.Name == item.Creator.UserName && User.Identity.Name == item.Executor.UserName)
+                    {
+                        @switch (item.Status)
+                        {
+                            case "Новая":
+                                <td>
+                                    <a asp-action="Open" asp-route-id="@item.Id">Открыть</a> |
+                                    <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
+                                    <a asp-action="Delete" asp-route-id="@item.Id">Удалить</a> |
+                                    <a asp-action="Edit" asp-route-id="@item.Id">Изменить</a>
+                                </td>
+                                break;
+                            case "Закрыта":
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
+                                    <a asp-action="Delete" asp-route-id="@item.Id">Удалить</a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id">Изменить</a>
+                                </td>
+                                break;
+                            case "Открыта":
+                                <td>
+                                    <a asp-action="Close" asp-route-id="@item.Id">Закрыть</a> |
+                                    <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
+                                    <a asp-action="Edit" asp-route-id="@item.Id">Изменить</a>
+                                </td>
+                                break;
+                        }
+                    }
+                    else if (User.Identity.Name == item.Executor.UserName)
+                    {
+                        @switch (item.Status)
+                        {
+                            case "Закрыта":
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@item.Id">Детали</a>
+                                </td>
+                                break;
+                            case "Открыта":
+                                <td>
+                                    <a asp-action="Close" asp-route-id="@item.Id">Закрыть</a> |
+                                    <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
+                                </td>
+                                break;
+                        }
+                    }
+                    else if (User.Identity.Name == item.Creator.UserName)
+                    {
+                        @switch (item.Status)
+                        {
+                            case "Новая":
+                                <td>
+                                    <a asp-action="Open" asp-route-id="@item.Id">Открыть</a> |
+                                    <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
+                                    <a asp-action="Delete" asp-route-id="@item.Id">Удалить</a> |
+                                    <a asp-action="Edit" asp-route-id="@item.Id">Изменить</a>
+                                </td>
+                                break;
+                            case "Закрыта":
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
+                                    <a asp-action="Delete" asp-route-id="@item.Id">Удалить</a> |
+                                    <a asp-action="Edit" asp-route-id="@item.Id">Изменить</a>
+                                </td>
+                                break;
+                            case "Открыта":
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@item.Id">Детали</a> |
+                                    <a asp-action="Edit" asp-route-id="@item.Id">Изменить</a>
+                                </td>
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        <td>У вас нет прав работать с задачей</td>
+                    }
+                }
+                else
+                {
+                    <td>У вас нет прав работать с задачей</td>
                 }
         </tr>
 }
