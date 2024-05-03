@@ -25,10 +25,22 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="MyTask" asp-action="Index">Все задачи</a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="MyTask" asp-action="Index" asp-route-filter="Взятые">Взятые задачи</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="MyTask" asp-action="Index" asp-route-filter="Свободные">Свободные задачи</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="MyTask" asp-action="Index" asp-route-filter="Созданные">Созданные задачи</a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="MyTask" asp-action="Create">Добавить задачу</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Logout">Выйти</a>
+                            </li>
+                            <li class="nav-item">
+                                <a>@User.Identity.Name</a>
                             </li>
                         }
                         else

@@ -10,7 +10,7 @@
 @if (User.Identity.IsAuthenticated)
 {
     <p>
-        <a asp-action="Create" asp-route-email="@User.Identity.Name">Create New</a>
+        <a asp-action="Create" asp-route-name="@User.Identity.Name">Create New</a>
     </p>
 }
 
@@ -52,6 +52,10 @@
                         <option value="Закрыта">Закрыта</option>
                     </select>
                 </th>
+                @if (ViewBag.Filter != null)
+                {
+                    <input type="hidden" name="filter" value="@ViewBag.Filter"/>
+                }
                 <button class="btn btn-primary">Фильтровать</button>
             </form>
         </tr>
@@ -144,6 +148,11 @@
                     {
                         @switch (item.Status)
                         {
+                            case "Новая":
+                                <td>
+                                    Задача еще не открыта
+                                </td>
+                                break;
                             case "Закрыта":
                                 <td>
                                     <a asp-action="Details" asp-route-id="@item.Id">Детали</a>
@@ -186,7 +195,7 @@
                     }
                     else
                     {
-                        <td>У вас нет прав работать с задачей</td>
+                        <td>Error!!!</td>
                     }
                 }
                 else

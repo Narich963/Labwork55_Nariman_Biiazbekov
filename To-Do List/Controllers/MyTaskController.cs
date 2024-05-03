@@ -10,6 +10,8 @@ using static To_Do_List.Services.TaskSort;
 using To_Do_List.Services;
 using To_Do_List.ViewModels;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Build.Framework;
 
 namespace To_Do_List.Controllers
 {
@@ -24,8 +26,9 @@ namespace To_Do_List.Controllers
         }
 
         // GET: MyTask
+        [Authorize]
         public async Task<IActionResult> Index(string? fullName, DateTime? CreatedFrom, DateTime? CreatedTo, 
-            string? wordContains, string? priority, string? status, 
+            string? wordContains, string? priority, string? status, string? filter,
             TaskSort order = PriorytyAsc, int page = 1)
         {
             ViewBag.NameSort = order == NameAsc ? NameDesc : NameAsc;
@@ -59,6 +62,25 @@ namespace To_Do_List.Controllers
             {
                 tasks = tasks.Where(t => t.Status == status).ToList();
             }
+            if (filter == "Взятые")
+            {
+                User user = await _userManager.GetUserAsync(User);
+                if (user != null)
+                {
+                    tasks = tasks.Where(t => t.ExecutorId == user.Id).ToList();
+                }
+                ViewBag.Filter = filter;
+            }
+            if (filter == "Свободные")
+            {
+                tasks = tasks.Where(t => t.ExecutorId == null).ToList();
+                ViewBag.Filter = filter;
+            }
+            if (filter == "Созданные")
+            {
+                tasks = tasks.Where(t => t.Creator.UserName == User.Identity.Name).ToList();
+                ViewBag.Filter = filter;
+            }
 
             tasks = GetSortOrder(tasks, order);
 
@@ -77,6 +99,7 @@ namespace To_Do_List.Controllers
         }
 
         // GET: MyTask/Details/5
+        [Authorize]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -95,17 +118,19 @@ namespace To_Do_List.Controllers
         }
 
         // GET: MyTask/Create
-        public async Task<IActionResult> Create(string? email)
+        [Authorize]
+        public async Task<IActionResult> Create(string? name)
         {
-            if (email != null)
+            if (name != null)
             {
-                User user = await _userManager.FindByEmailAsync(email);
+                User user = await _userManager.FindByNameAsync(name);
                 if (user != null)
                 {
                     ViewBag.UserId = user.Id;
+                    return View();
                 }
             }
-            return View();
+            return NotFound();
         }
 
         // POST: MyTask/Create
@@ -113,7 +138,8 @@ namespace To_Do_List.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(MyTask myTask, string? email)
+        [Authorize]
+        public async Task<IActionResult> Create(MyTask myTask, string? name)
         {
             if (ModelState.IsValid)
             {
@@ -121,9 +147,9 @@ namespace To_Do_List.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            if (email != null)
+            if (name != null)
             {
-                User user = await _userManager.FindByEmailAsync(email);
+                User user = await _userManager.FindByNameAsync(name);
                 if (user != null)
                 {
                     ViewBag.UserId = user.Id;
@@ -131,45 +157,55 @@ namespace To_Do_List.Controllers
             }
             return View(myTask);
         }
+        [Authorize]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
-            var task = await _context.MyTasks.FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.MyTasks.Include(t => t.Creator).FirstOrDefaultAsync(t => t.Id == id);
             if (task != null)
             {
-                return View(task);
+                if (await HasPermission(task))
+                {
+                    return View(task);
+                }
             }
             return NotFound();
         }
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> Edit(MyTask task)
         {
-            if (ModelState.IsValid)
+            if (await HasPermission(task))
             {
-                try
+                if (ModelState.IsValid)
                 {
-                    _context.Update(task);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!MyTaskExists(task.Id))
+                    try
                     {
-                        return NotFound();
+                        _context.Update(task);
+                        await _context.SaveChangesAsync();
                     }
-                    else
+                    catch (DbUpdateConcurrencyException)
                     {
-                        throw;
+                        if (!MyTaskExists(task.Id))
+                        {
+                            return NotFound();
+                        }
+                        else
+                        {
+                            throw;
+                        }
                     }
+                    return RedirectToAction(nameof(Index));
                 }
-                return RedirectToAction(nameof(Index));
+                return View(task);
             }
-            return View(task);
+            return RedirectToAction("Index");
         }
         // GET: MyTask/Delete/5
+        [Authorize]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -177,7 +213,7 @@ namespace To_Do_List.Controllers
                 return NotFound();
             }
 
-            var myTask = await _context.MyTasks
+            var myTask = await _context.MyTasks.Include(t => t.Creator)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (myTask == null)
             {
@@ -188,29 +224,38 @@ namespace To_Do_List.Controllers
             {
                 return RedirectToAction("Index");
             }
-
-            return View(myTask);
+            if (await HasPermission(myTask))
+            {
+                return View(myTask);
+            }
+            return RedirectToAction("Index");
         }
 
         // POST: MyTask/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var myTask = await _context.MyTasks.FindAsync(id);
             if (myTask != null)
             {
-                _context.MyTasks.Remove(myTask);
-            }
+                if (await HasPermission(myTask))
+                {
+                    _context.MyTasks.Remove(myTask);
+                }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            return RedirectToAction("Index");
         }
 
         private bool MyTaskExists(int id)
         {
             return _context.MyTasks.Any(e => e.Id == id);
         }
+        [Authorize]
         public async Task<IActionResult> TakeTask(int? id, string? name)
         {
             User user = await _userManager.FindByNameAsync(name);
@@ -228,6 +273,7 @@ namespace To_Do_List.Controllers
             return NotFound();
         }
         [ActionName("Open")]
+        [Authorize]
         public async Task<IActionResult> Open(int? id)
         {
             if (id != null)
@@ -244,6 +290,7 @@ namespace To_Do_List.Controllers
             return NotFound();
         }
         [ActionName("Close")]
+        [Authorize]
         public async Task<IActionResult> Close(int? id)
         {
             if (id != null)
@@ -258,6 +305,16 @@ namespace To_Do_List.Controllers
                 }
             }
             return NotFound();
+        }
+        [NonAction]
+        private async Task<bool> HasPermission(MyTask task)
+        {
+            User user = await _userManager.GetUserAsync(User);
+            if (user != null)
+            {
+                return user.UserName == task.Creator.UserName;
+            }
+            return false;
         }
         [NonAction]
         public List<MyTask> GetSortOrder(List<MyTask> tasks, TaskSort order) =>
