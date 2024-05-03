@@ -9,25 +9,6 @@
 <div>
     <h4>MyTask</h4>
     <hr />
-    @switch (Model.Status)
-    {
-        case "Новая":
-            <ul>
-                <li><a asp-action="Open" asp-route-id="@Model.Id">Открыть</a> |</li>
-                <li><a asp-action="Delete" asp-route-id="@Model.Id">Удалить</a></li
-            </ul>
-            break;
-        case "Закрыта":
-            <ul>
-                <li><a asp-action="Delete" asp-route-id="@Model.Id">Удалить</a></li
-            </ul>
-            break;
-        case "Открыта":
-            <ul>
-                <li><a asp-action="Close" asp-route-id="@Model.Id">Закрыть</a> |</li>
-            </ul>
-            break;
-    }
     <dl class="row">
         <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.Id)

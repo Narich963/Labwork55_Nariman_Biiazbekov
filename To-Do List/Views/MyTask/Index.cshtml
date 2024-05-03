@@ -116,7 +116,8 @@
                     {
                         <td><a asp-action="TakeTask" asp-route-id="@item.Id" asp-route-name="@User.Identity.Name">Взять задачу</a></td>
                     }
-                    else if (User.Identity.Name == item.Creator.UserName && User.Identity.Name == item.Executor.UserName)
+    
+                    else if ((User.Identity.Name == item.Creator.UserName && User.Identity.Name == item.Executor.UserName) || User.IsInRole("admin"))
                     {
                         @switch (item.Status)
                         {

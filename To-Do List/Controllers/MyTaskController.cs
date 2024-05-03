@@ -309,6 +309,10 @@ namespace To_Do_List.Controllers
         [NonAction]
         private async Task<bool> HasPermission(MyTask task)
         {
+            if (User.IsInRole("admin"))
+            {
+                return true;
+            }
             User user = await _userManager.GetUserAsync(User);
             if (user != null)
             {
